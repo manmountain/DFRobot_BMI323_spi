@@ -1,7 +1,7 @@
 # DFRobot_BMI323
 - [English Version](./README.md)
 
-BMI323 是一款低功耗、高性能的 6 轴 IMU 传感器，集成了 3 轴加速度计和 3 轴陀螺仪。它通过 I2C 接口通信，提供全面的运动检测功能，包括计步、任意运动检测、无运动检测、显著运动检测、敲击检测、倾斜检测、方向检测和平面检测。
+BMI323 是一款低功耗、高性能的 6 轴 IMU 传感器，集成了 3 轴加速度计和 3 轴陀螺仪。本库通过 SPI 接口通信，并提供全面的运动检测功能，包括计步、任意运动检测、无运动检测、显著运动检测、敲击检测、倾斜检测、方向检测和平面检测。
 
 该传感器非常适合可穿戴设备、智能手表、健身追踪器和物联网应用，这些应用对运动感知和能效要求很高。BMI323 具有基于硬件的运动检测算法，可独立运行，无需 MCU 持续干预即可实现超低功耗。通过可配置的中断引脚（INT1 和 INT2），传感器可以高效地通知主机系统运动事件，非常适合电池供电的应用。
 
@@ -13,7 +13,7 @@ BMI323 是一款低功耗、高性能的 6 轴 IMU 传感器，集成了 3 轴�
 - 手势识别（敲击、倾斜、方向、平面检测）
 - 可配置输出数据速率（ODR），从 0.78Hz 到 6400Hz
 - 多种工作模式（低功耗、普通、高性能）
-- I2C 接口，可配置地址（0x68/0x69）
+- SPI 接口，可配置片选引脚
 - 双中断引脚，灵活的事件处理
 
 <p align="center">
@@ -40,7 +40,7 @@ BMI323 是一款低功耗、高性能的 6 轴 IMU 传感器，集成了 3 轴�
 
 **基本功能：**
 
-- 通过 I2C 接口初始化传感器
+- 通过 SPI 接口初始化传感器
 - 配置加速度计和陀螺仪参数（ODR、量程、工作模式）
 - 同时读取 6 轴传感器数据（加速度计 + 陀螺仪）
 
@@ -59,7 +59,11 @@ BMI323 是一款低功耗、高性能的 6 轴 IMU 传感器，集成了 3 轴�
 
 ## 库安装
 
-要使用本库，请先下载库文件，将其粘贴到 \Arduino\libraries 目录，然后打开 examples 文件夹并运行其中的示例程序。
+要使用本库，请将整个 `DFRobot_BMI323` 文件夹安装到 Arduino sketchbook 的 `libraries` 目录中（例如 `Documents/Arduino/libraries/DFRobot_BMI323`）。确保 `library.properties` 和 `src` 文件夹位于库目录根目录，然后在 Arduino IDE 中重新打开示例。
+
+## SPI 接线
+
+将传感器的 SCK、SDI/MOSI 和 SDO/MISO 分别连接到开发板的 SPI 时钟、MOSI 和 MISO 引脚。将传感器 CS 引脚连接到 `BMI323_CS_PIN` 指定的引脚（示例默认为引脚 10），并连接电源和地线。请根据开发板和实际接线修改 CS 引脚。中断示例还需要连接传感器的 INT 引脚。
 
 ## 方法
 
@@ -67,17 +71,17 @@ BMI323 是一款低功耗、高性能的 6 轴 IMU 传感器，集成了 3 轴�
   /**
    * @fn DFRobot_BMI323
    * @brief 构造函数
-   * @details 构造函数 - I2C 接口
-   * @param wire TwoWire 对象指针，默认为 &Wire
-   * @param i2cAddr I2C 地址，默认为 0x69
+    * @details 构造函数 - SPI 接口
+    * @param spi SPI 对象指针，默认为 &SPI
+    * @param csPin 片选引脚，默认为 10
    * @return 无
    */
-  DFRobot_BMI323(TwoWire *wire = &Wire, uint8_t i2cAddr = 0x69);
+  DFRobot_BMI323(SPIClass *spi = &SPI, uint8_t csPin = 10);
 
   /**
    * @fn begin
    * @brief 初始化函数
-   * @details 初始化 I2C 接口、芯片寄存器和功能上下文
+    * @details 初始化 SPI 接口、芯片寄存器和功能上下文
    * @param 无
    * @return bool 类型，表示初始化状态
    * @retval true 初始化成功

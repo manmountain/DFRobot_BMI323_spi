@@ -13,9 +13,9 @@
 
 #include "DFRobot_BMI323.h"
 
-#define BMI323_I2C_ADDR 0x69    // When SDO is pulled low, the I2C address is 0x68
+#define BMI323_CS_PIN 10    // Set to the pin connected to the sensor's CS pin
 
-DFRobot_BMI323 bmi323(&Wire, BMI323_I2C_ADDR);
+DFRobot_BMI323 bmi323(&SPI, BMI323_CS_PIN);
 volatile bool  gStepReady = false;
 
 #if defined(ESP8266)
@@ -38,7 +38,7 @@ void setup()
   Serial.println("========================");
 
   while (!bmi323.begin()) {
-    Serial.println("I2C init failed, retry in 1s");
+    Serial.println("SPI init failed, retry in 1s");
     delay(1000);
   }
 

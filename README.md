@@ -1,7 +1,7 @@
 # DFRobot_BMI323
 - [中文版](./README_CN.md)
 
-The BMI323 is a low-power, high-performance 6-axis IMU sensor that combines a 3-axis accelerometer and a 3-axis gyroscope. It communicates via I2C interface and provides comprehensive motion detection capabilities including step counting, any-motion detection, no-motion detection, significant motion detection, tap detection, tilt detection, orientation detection, and flat detection.
+The BMI323 is a low-power, high-performance 6-axis IMU sensor that combines a 3-axis accelerometer and a 3-axis gyroscope. This library communicates via SPI and provides comprehensive motion detection capabilities including step counting, any-motion detection, no-motion detection, significant motion detection, tap detection, tilt detection, orientation detection, and flat detection.
 
 This sensor is ideal for wearable devices, smart watches, fitness trackers, and IoT applications where motion sensing and power efficiency are critical. The BMI323 features hardware-based motion detection algorithms that operate independently, allowing for ultra-low power consumption without requiring constant MCU intervention. With configurable interrupt pins (INT1 and INT2), the sensor can efficiently notify the host system of motion events, making it perfect for battery-powered applications.
 
@@ -13,7 +13,7 @@ This sensor is ideal for wearable devices, smart watches, fitness trackers, and 
 - Gesture recognition (tap, tilt, orientation, flat detection)
 - Configurable output data rates (ODR) from 0.78Hz to 6400Hz
 - Multiple operating modes (low power, normal, high performance)
-- I2C interface with configurable address (0x68/0x69)
+- SPI interface with a configurable chip-select pin
 - Dual interrupt pins for flexible event handling
 
 <p align="center">
@@ -40,7 +40,7 @@ This Arduino library provides a comprehensive interface for the BMI323 6-axis IM
 
 **Basic Functions:**
 
-- Initialize sensor via I2C interface
+- Initialize sensor via SPI interface
 - Configure accelerometer and gyroscope parameters (ODR, range, operating mode)
 - Read 6-axis sensor data (accelerometer + gyroscope) simultaneously
 
@@ -59,7 +59,11 @@ All motion detection features support configurable thresholds and can be mapped 
 
 ## Installation
 
-To use this library, first download the library file, paste it into the \Arduino\libraries directory, then open the examples folder and run the demo in the folder.
+To use this library, install the entire `DFRobot_BMI323` folder under your sketchbook's `libraries` directory (for example, `Documents/Arduino/libraries/DFRobot_BMI323`). Keep `library.properties` and the `src` folder at the library root, then reopen the example in Arduino IDE.
+
+## SPI Wiring
+
+Connect the sensor's SCK, SDI/MOSI, and SDO/MISO pins to the board's SPI clock, MOSI, and MISO pins. Connect the sensor's CS pin to the pin selected by `BMI323_CS_PIN` (examples default to pin 10), and connect power and ground. Adjust the CS pin for your board and wiring. The sensor's INT pins are only needed for interrupt examples.
 
 ## Methods
 
@@ -67,17 +71,17 @@ To use this library, first download the library file, paste it into the \Arduino
   /**
    * @fn DFRobot_BMI323
    * @brief Constructor
-   * @details Constructor - I2C interface
-   * @param wire TwoWire object pointer, default &Wire
-   * @param i2cAddr I2C address, default 0x69
+    * @details Constructor - SPI interface
+    * @param spi SPI object pointer, default &SPI
+    * @param csPin Chip-select pin, default 10
    * @return None
    */
-  DFRobot_BMI323(TwoWire *wire = &Wire, uint8_t i2cAddr = 0x69);
+  DFRobot_BMI323(SPIClass *spi = &SPI, uint8_t csPin = 10);
 
   /**
    * @fn begin
    * @brief Initialization function
-   * @details Initialize I2C interface, chip registers and feature context
+    * @details Initialize SPI interface, chip registers and feature context
    * @param None
    * @return bool type, indicates the initialization status
    * @retval true Initialization successful

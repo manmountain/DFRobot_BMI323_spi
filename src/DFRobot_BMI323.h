@@ -1,7 +1,7 @@
 /*!
  * @file DFRobot_BMI323.h
  * @brief Define the basic structure of DFRobot_BMI323 class
- * @details This is a 6-axis IMU sensor (accelerometer + gyroscope) that can be controlled via I2C interface.
+ * @details This is a 6-axis IMU sensor (accelerometer + gyroscope) that can be controlled via SPI interface.
  * @n BMI323 features multiple motion detection capabilities, such as step counter, any-motion detection, no-motion detection, tap detection, etc.
  * @n These features make BMI323 sensor very useful in wearable devices, smart devices and other applications.
  * @n BMI323 also has interrupt pins that can be used in an energy-efficient manner without software algorithms.
@@ -16,7 +16,7 @@
 #define __DFRobot_BMI323_H
 
 #include "Arduino.h"
-#include "Wire.h"
+#include "SPI.h"
 #include "bmi323.h"
 #include "stdint.h"
 
@@ -148,18 +148,18 @@ public:
   /**
    * @fn DFRobot_BMI323
    * @brief Constructor
-   * @details Constructor - I2C interface
-   * @param wire TwoWire object pointer, default &Wire
-   * @param i2cAddr I2C address, default 0x69
+  * @details Constructor - SPI interface
+  * @param spi SPI object pointer, default &SPI
+  * @param csPin Chip-select pin, default 10
    * @return None
    */
-  DFRobot_BMI323(TwoWire *wire = &Wire, uint8_t i2cAddr = 0x69);
+  DFRobot_BMI323(SPIClass *spi = &SPI, uint8_t csPin = 10);
   ~DFRobot_BMI323();
 
   /**
    * @fn begin
    * @brief Initialization function
-   * @details Initialize I2C interface, chip registers and feature context
+  * @details Initialize SPI interface, chip registers and feature context
    * @param None
    * @return bool type, indicates the initialization status
    * @retval true Initialization successful
@@ -455,10 +455,17 @@ public:
    */
   bool enableTiltInt(const struct bmi3_tilt_config &config, eInt_t pin);
 
+  /**
+   * @fn getChipID
+   * @brief Read chip ID
+   * @return uint8_t Chip ID value, or 0x00 if read fails
+   */
+  uint8_t getChipID(void);
+
 private:
-  /** I2C related */
-  uint8_t  _i2cAddr = 0x69;    ///< I2C device address fixed at 0x69
-  TwoWire *_wire;              ///< TwoWire object pointer
+  /** SPI related */
+  SPIClass *_spi;    ///< SPI bus object pointer
+  uint8_t   _csPin;  ///< Chip-select pin
 
   /** Device structure */
   struct bmi3_dev _dev;    ///< BMI3 device structure
@@ -484,32 +491,32 @@ private:
 
   /**
    * @fn _initInterface
-   * @brief Initialize I2C interface
+    * @brief Initialize SPI interface
    * @return int8_t 0 indicates success, negative value indicates failure
    */
   int8_t _initInterface(void);
 
   /**
-   * @fn _i2cRead
-   * @brief I2C read function
+    * @fn _spiRead
+    * @brief SPI read function
    * @param reg_addr Register address
    * @param reg_data Data buffer
    * @param len Data length
    * @param intf_ptr Interface pointer
    * @return int8_t 0 indicates success, negative value indicates failure
    */
-  int8_t _i2cRead(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr);
+  int8_t _spiRead(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr);
 
   /**
-   * @fn _i2cWrite
-   * @brief I2C write function
+    * @fn _spiWrite
+    * @brief SPI write function
    * @param reg_addr Register address
    * @param reg_data Data buffer
    * @param len Data length
    * @param intf_ptr Interface pointer
    * @return int8_t 0 indicates success, negative value indicates failure
    */
-  int8_t _i2cWrite(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr);
+  int8_t _spiWrite(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr);
 
   /**
    * @fn _delayUs
@@ -520,8 +527,8 @@ private:
   void _delayUs(uint32_t period, void *intf_ptr);
 
   /** Static callback functions (for low-level driver) */
-  static int8_t _i2cReadCallback(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr);
-  static int8_t _i2cWriteCallback(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr);
+  static int8_t _spiReadCallback(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr);
+  static int8_t _spiWriteCallback(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr);
   static void   _delayUsCallback(uint32_t period, void *intf_ptr);
 
   /**

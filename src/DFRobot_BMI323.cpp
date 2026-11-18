@@ -18,14 +18,14 @@ static DFRobot_BMI323 *g_bmi323_instance = NULL;
 
 // ========== Constructor and Destructor ==========
 
-DFRobot_BMI323::DFRobot_BMI323(TwoWire *wire, uint8_t i2cAddr)
+DFRobot_BMI323::DFRobot_BMI323(SPIClass *spi, uint8_t csPin)
 {
-  _wire                 = wire;
+  _spi                  = spi;
+  _csPin                = csPin;
   _initialized          = false;
   _featureAccConfigFlag = false;
   _accelRange           = 2.0f;
   _gyroRange            = 250.0f;
-  _i2cAddr              = i2cAddr;
   memset(&_dev, 0, sizeof(_dev));
   memset(&_intMapConfig, 0, sizeof(_intMapConfig));
   memset(&_featureEnable, 0, sizeof(_featureEnable));
@@ -42,6 +42,14 @@ DFRobot_BMI323::~DFRobot_BMI323()
 }
 
 // ========== Initialization Functions ==========
+
+uint8_t DFRobot_BMI323::getChipID(void)
+{
+  if (!_initialized) {
+    return 0x00;
+  }
+  return _dev.chip_id;
+}
 
 bool DFRobot_BMI323::begin(void)
 {
@@ -73,13 +81,15 @@ bool DFRobot_BMI323::begin(void)
 
 int8_t DFRobot_BMI323::_initInterface(void)
 {
-  // I2C interface initialization
-  _wire->begin();
+  // SPI interface initialization
+  _spi->begin();
+  pinMode(_csPin, OUTPUT);
+  digitalWrite(_csPin, HIGH);
 
-  _dev.intf           = BMI3_I2C_INTF;
-  _dev.read           = _i2cReadCallback;
-  _dev.write          = _i2cWriteCallback;
-  _dev.intf_ptr       = &_i2cAddr;
+  _dev.intf           = BMI3_SPI_INTF;
+  _dev.read           = _spiReadCallback;
+  _dev.write          = _spiWriteCallback;
+  _dev.intf_ptr       = &_csPin;
   _dev.read_write_len = 8;
 
   // Set delay function
@@ -88,45 +98,33 @@ int8_t DFRobot_BMI323::_initInterface(void)
   return BMI323_OK;
 }
 
-// ========== I2C Read/Write Functions ==========
+// ========== SPI Read/Write Functions ==========
 
-int8_t DFRobot_BMI323::_i2cRead(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
+int8_t DFRobot_BMI323::_spiRead(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
 {
-  (void)intf_ptr;
-
-  _wire->beginTransmission(_i2cAddr);
-  _wire->write(reg_addr);
-  if (_wire->endTransmission() != 0) {
-    return BMI323_E_COM_FAIL;
+  uint8_t csPin = *(uint8_t *)intf_ptr;
+  _spi->beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+  digitalWrite(csPin, LOW);
+  _spi->transfer(reg_addr);
+  for (uint32_t i = 0; i < len; i++) {
+    reg_data[i] = _spi->transfer(0x00);
   }
-
-  _wire->requestFrom(_i2cAddr, (uint8_t)len);
-  uint32_t index = 0;
-  while (_wire->available() && index < len) {
-    reg_data[index++] = _wire->read();
-  }
-
-  if (index != len) {
-    return BMI323_E_COM_FAIL;
-  }
-
+  digitalWrite(csPin, HIGH);
+  _spi->endTransaction();
   return BMI323_OK;
 }
 
-int8_t DFRobot_BMI323::_i2cWrite(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr)
+int8_t DFRobot_BMI323::_spiWrite(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr)
 {
-  (void)intf_ptr;
-
-  _wire->beginTransmission(_i2cAddr);
-  _wire->write(reg_addr);
+  uint8_t csPin = *(uint8_t *)intf_ptr;
+  _spi->beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+  digitalWrite(csPin, LOW);
+  _spi->transfer(reg_addr);
   for (uint32_t i = 0; i < len; i++) {
-    _wire->write(reg_data[i]);
+    _spi->transfer(reg_data[i]);
   }
-
-  if (_wire->endTransmission() != 0) {
-    return BMI323_E_COM_FAIL;
-  }
-
+  digitalWrite(csPin, HIGH);
+  _spi->endTransaction();
   return BMI323_OK;
 }
 
@@ -140,20 +138,20 @@ void DFRobot_BMI323::_delayUs(uint32_t period, void *intf_ptr)
 
 // ========== Static Callback Functions ==========
 
-int8_t DFRobot_BMI323::_i2cReadCallback(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
+int8_t DFRobot_BMI323::_spiReadCallback(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
 {
   if (g_bmi323_instance == NULL) {
     return BMI323_E_NULL_PTR;
   }
-  return g_bmi323_instance->_i2cRead(reg_addr, reg_data, len, intf_ptr);
+  return g_bmi323_instance->_spiRead(reg_addr, reg_data, len, intf_ptr);
 }
 
-int8_t DFRobot_BMI323::_i2cWriteCallback(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr)
+int8_t DFRobot_BMI323::_spiWriteCallback(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr)
 {
   if (g_bmi323_instance == NULL) {
     return BMI323_E_NULL_PTR;
   }
-  return g_bmi323_instance->_i2cWrite(reg_addr, reg_data, len, intf_ptr);
+  return g_bmi323_instance->_spiWrite(reg_addr, reg_data, len, intf_ptr);
 }
 
 void DFRobot_BMI323::_delayUsCallback(uint32_t period, void *intf_ptr)

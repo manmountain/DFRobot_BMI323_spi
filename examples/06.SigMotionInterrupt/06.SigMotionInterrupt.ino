@@ -14,9 +14,9 @@
 
 #include "DFRobot_BMI323.h"
 
-#define BMI323_I2C_ADDR 0x69    // When SDO is pulled low, the I2C address is 0x68
+#define BMI323_CS_PIN D9    // Set to the pin connected to the sensor's CS pin
 
-DFRobot_BMI323 bmi323(&Wire, BMI323_I2C_ADDR);
+DFRobot_BMI323 bmi323(&SPI, BMI323_CS_PIN);
 volatile bool  gSigMotionDetected = false;
 
 #if defined(ESP8266)
@@ -65,7 +65,7 @@ void setup()
 
 #if defined(ESP32)
   // D6 pin is used as interrupt pin by default, other non-conflicting pins can also be selected as external interrupt pins.
-  attachInterrupt(digitalPinToInterrupt(14 /*D6*/) /* Query the interrupt number of the D6 pin */, interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(D8 /*D6*/) /* Query the interrupt number of the D6 pin */, interrupt, RISING);
 #elif defined(ESP8266)
   attachInterrupt(digitalPinToInterrupt(13), interrupt, RISING);
 #elif defined(ARDUINO_SAM_ZERO)
